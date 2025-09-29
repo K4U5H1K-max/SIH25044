@@ -1,0 +1,23 @@
+# Render Static Site Configuration
+# This file configures the frontend deployment on Render
+
+# Build settings
+buildCommand: npm run build
+publishDir: dist
+
+# Headers for SPA routing
+headers:
+  - source: "/*"
+    headers:
+      - key: "X-Frame-Options"
+        value: "DENY"
+      - key: "X-Content-Type-Options"
+        value: "nosniff"
+      - key: "Referrer-Policy"
+        value: "strict-origin-when-cross-origin"
+
+# Redirects for SPA (redirect all routes to index.html)
+redirects:
+  - source: "/*"
+    destination: "/index.html"
+    type: 200

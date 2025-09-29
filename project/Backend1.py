@@ -1355,6 +1355,7 @@ allowed_origins = [
     re.compile(r"http://localhost:\d+$"),
     re.compile(r"http://127\.0\.0\.1:\d+$"),
     re.compile(r"https://.*\.vercel\.app$"),  # Allow all Vercel domains
+    re.compile(r"https://.*\.onrender\.com$"),  # Allow all Render domains
     *[o for o in env_origins if o],
 ]
 
