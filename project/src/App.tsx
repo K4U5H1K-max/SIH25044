@@ -3,6 +3,7 @@ import { AppProvider, useAppContext } from './contexts/AppContext';
 import LoginPage from './components/LoginPage';
 import LanguageSelection from './components/LanguageSelection';
 import MainPage from './components/MainPage';
+import { EnvDebugger } from './components/EnvDebugger';
 
 const AppContent: React.FC = () => {
   const { user } = useAppContext();
@@ -23,6 +24,7 @@ function App() {
   return (
     <AppProvider>
       <AppContent />
+      <EnvDebugger />
     </AppProvider>
   );
 }

@@ -1,7 +1,15 @@
+// Debug environment variables
+console.log('🔧 [API] Environment variable debug:');
+console.log('- import.meta.env.VITE_API_BASE:', import.meta.env.VITE_API_BASE);
+console.log('- import.meta.env.MODE:', import.meta.env.MODE);
+console.log('- import.meta.env.DEV:', import.meta.env.DEV);
+
 export const API_BASE =
   ((import.meta as any).env && (import.meta as any).env.VITE_API_BASE) ||
   (typeof process !== 'undefined' ? (process as any).env?.VITE_API_BASE : undefined) ||
   'http://127.0.0.1:5000';
+
+console.log('🚀 [API] Final API_BASE:', API_BASE);
 
 if (!/^https?:\/\//.test(API_BASE)) {
   console.warn('[api] VITE_API_BASE is not a full URL. Using default http://127.0.0.1:5000. Current:', API_BASE);
