@@ -1,5 +1,16 @@
+# Core Flask dependencies (required)
 Flask==2.3.3
 Flask-CORS==4.0.0
 python-dotenv==1.0.0
 requests==2.31.0
+
+# Production server
 gunicorn==21.2.0
+
+# Optional dependencies (commented out for production deployment)
+# Uncomment if you need audio features on the backend
+# speechrecognition==3.10.0
+# gTTS==2.4.0
+# playsound==1.3.0
+# deepmultilingualpunctuation==1.0.1
+# PyAudio==0.2.11

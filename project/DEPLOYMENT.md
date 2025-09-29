@@ -20,7 +20,7 @@
      - **Root Directory**: `/project` (if repo root is different)
      - **Environment**: `Python 3`
      - **Build Command**: `pip install -r requirements.txt`
-     - **Start Command**: `gunicorn --bind 0.0.0.0:$PORT Backend1:app`
+     - **Start Command**: `python Backend1.py`
 
 3. **Set Environment Variables** on Render:
    ```
@@ -30,6 +30,33 @@
    ```
 
 4. **Deploy** - Render will automatically build and deploy your backend
+
+   **Alternative Start Commands** (if you encounter issues):
+   ```bash
+   # Option 1 (Recommended): Direct Python
+   python Backend1.py
+   
+   # Option 2: Gunicorn with full path
+   python -m gunicorn --bind 0.0.0.0:$PORT Backend1:app
+   
+   # Option 3: Traditional gunicorn
+   gunicorn --bind 0.0.0.0:$PORT Backend1:app
+   ```
+
+### 🔧 **Common Deployment Issues**
+
+#### "ModuleNotFoundError: No module named 'requests'"
+- **Solution**: Make sure your `requirements.txt` file is in the root directory of your project
+- **Check**: Render looks for `requirements.txt` in the same directory as your start command file
+- **Fix**: If the issue persists, try adding this to your start command:
+  ```bash
+  pip install -r requirements.txt && python Backend1.py
+  ```
+
+#### "Build failed" or dependency issues
+- Audio dependencies (PyAudio, playsound) may not install on Render
+- These are optional and wrapped in try-except blocks in the code
+- The backend will work without them (audio features will be handled by the frontend)
 
 ### Frontend Deployment (Vercel)
 
