@@ -74,10 +74,15 @@
    - Go to your Vercel project dashboard
    - Click "Settings" → "Environment Variables"
    - Add a new environment variable:
-     - **Key**: `VITE_API_BASE`
+     - **Key**: `VITE_API_BASE` (exactly like this - no spaces, valid characters only)
      - **Value**: `https://sih25044.onrender.com`
-     - **Environment**: Select "Production", "Preview", and "Development"
+     - **Environment**: Select all three: "Production", "Preview", and "Development"
    - Click "Save"
+   
+   **⚠️ Important**: 
+   - Make sure the key is exactly `VITE_API_BASE` (no extra spaces or characters)
+   - Don't use "Add from .env.local" - manually type the key and value
+   - Environment variable names can only contain letters, digits, and underscores
 
 3. **Test your backend** (should return JSON, not 404):
    - Visit: `https://sih25044.onrender.com/health` (if available)
@@ -135,6 +140,12 @@ After deployment, test:
 
 ## 🔧 Troubleshooting
 
+### Environment Variable Errors on Vercel
+- **"Invalid characters" error**: Make sure the key is exactly `VITE_API_BASE` (no spaces, special chars)
+- **"References Secret" error**: Don't use the "Add from .env.local" button - manually type the key and value
+- **Solution**: Delete the problematic variable and re-add it manually
+
+### Other Common Issues
 - **CORS errors**: Check `FRONTEND_ORIGINS` env var on Render
 - **API errors**: Check `VITE_API_BASE` env var on Vercel  
 - **Backend sleeping**: Render free tier sleeps after 15min inactivity
