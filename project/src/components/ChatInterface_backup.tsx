@@ -26,46 +26,7 @@ const ChatInterface: React.FC = () => {
     area: '',
     history: ''
   });
-  const [isTestingConnection, setIsTestingConnection] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const recognitionRef = useRef<any>(null);
-
-  // Function to clean markdown and special characters for display and speech
-  const cleanText = (text: string, forSpeech = false): string => {
-    let cleaned = text
-      // Remove markdown bold/italic
-      .replace(/\*\*([^*]+)\*\*/g, '$1') // **bold** -> bold
-      .replace(/\*([^*]+)\*/g, '$1')     // *italic* -> italic
-      
-      // Remove markdown headers
-      .replace(/#{1,6}\s+/g, '')        // ### Header -> Header
-      
-      // Remove markdown lists
-      .replace(/^\s*[-*+]\s+/gm, '')    // - item -> item
-      .replace(/^\s*\d+\.\s+/gm, '')    // 1. item -> item
-      
-      // Remove other markdown
-      .replace(/`([^`]+)`/g, '$1')      // `code` -> code
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // [text](link) -> text
-      
-      // Clean special characters and formatting
-      .replace(/[_~`|]/g, '')           // Remove underscores, tildes, etc.
-      .replace(/\n\s*\n/g, '\n')        // Multiple newlines -> single
-      .replace(/\s+/g, ' ')             // Multiple spaces -> single space
-      .trim();
-
-    if (forSpeech) {
-      cleaned = cleaned
-        // Convert formatting to speech-friendly text
-        .replace(/\n/g, '. ')           // Line breaks become pauses
-        .replace(/:/g, ', ')            // Colons become pauses
-        .replace(/(\d+)\./g, '$1. ')    // Add pause after numbers
-        .replace(/\s+/g, ' ')           // Clean up spaces again
-        .trim();
-    }
-
-    return cleaned;
-  };
 
   useEffect(() => {
     console.log('[ChatInterface] Mounted. lang=', language, 'sound=', isSoundEnabled);
@@ -85,16 +46,6 @@ const ChatInterface: React.FC = () => {
   useEffect(() => {
     console.log('[ChatInterface] messages updated. count=', messages.length);
   }, [messages]);
-
-  // Cleanup speech recognition on unmount
-  useEffect(() => {
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-        recognitionRef.current = null;
-      }
-    };
-  }, []);
 
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
@@ -159,11 +110,11 @@ const ChatInterface: React.FC = () => {
     setFarmerData(newFarmerData);
     setConversationStep(nextStep);
 
-    // Add AI response with cleaned content
+    // Add AI response
     const aiResponse: ChatMessage = {
       id: (Date.now() + 1).toString(),
       type: 'ai',
-      content: cleanText(nextQuestion),
+      content: nextQuestion,
       timestamp: new Date()
     };
 
@@ -190,9 +141,14 @@ const ChatInterface: React.FC = () => {
       console.log('[ChatInterface] Speaking AI response. lang=', language);
       
       // Clean the text for better speech synthesis
-      const speechText = cleanText(nextQuestion, true);
+      const cleanText = nextQuestion
+        .replace(/[*#\-</>()[\]{}|\\^~`]/g, '') // Remove special characters
+        .replace(/\n+/g, '. ') // Replace line breaks with periods
+        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+        .replace(/(\d+)\./g, '$1. ') // Add pause after numbers
+        .trim();
 
-      const utterance = new SpeechSynthesisUtterance(speechText);
+      const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = language === 'hi' ? 'hi-IN' : 
                       language === 'te' ? 'te-IN' :
                       language === 'ta' ? 'ta-IN' :
@@ -216,7 +172,7 @@ const ChatInterface: React.FC = () => {
       const recommendationMessage: ChatMessage = {
         id: (Date.now() + 3).toString(),
         type: 'ai',
-        content: cleanText(data?.answer || 'Unable to generate recommendations at this time.'),
+        content: data?.answer || 'Unable to generate recommendations at this time.',
         timestamp: new Date()
       };
       
@@ -239,7 +195,7 @@ const ChatInterface: React.FC = () => {
       const errorMessage: ChatMessage = {
         id: (Date.now() + 3).toString(),
         type: 'ai',
-        content: cleanText(`Error generating recommendations: ${err?.message || 'unknown error'}`),
+        content: `Error generating recommendations: ${err?.message || 'unknown error'}`,
         timestamp: new Date()
       };
       addMessage(errorMessage);
@@ -271,120 +227,10 @@ const ChatInterface: React.FC = () => {
     }
   };
 
-  const testNetworkConnection = async (): Promise<boolean> => {
-    try {
-      // Test connection with timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
-      
-      await fetch('https://www.google.com/favicon.ico', { 
-        method: 'HEAD',
-        mode: 'no-cors',
-        cache: 'no-cache',
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  const toggleRecording = async () => {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      alert('Voice input is not supported in this browser. Please use Chrome, Edge, or Safari, or type your message instead.');
-      return;
-    }
-
-    // Check both navigator.onLine and actual network connectivity
-    if (!navigator.onLine) {
-      alert('No internet connection detected. Voice input requires internet. Please type your message instead.');
-      return;
-    }
-
-    // Test actual connection to speech services
-    setIsTestingConnection(true);
-    const hasConnection = await testNetworkConnection();
-    setIsTestingConnection(false);
-    
-    if (!hasConnection) {
-      alert('Cannot connect to speech recognition service. This might be due to:\n• Network firewall blocking Google services\n• Slow internet connection\n• Regional restrictions\n\nPlease type your message instead.');
-      return;
-    }
-
-    if (isRecording) {
-      // Stop recording
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-        recognitionRef.current = null;
-      }
-      setIsRecording(false);
-      console.log('[ChatInterface] Stopped voice recording');
-    } else {
-      // Start recording
-      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-      const recognition = new SpeechRecognition();
-      
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = language === 'hi' ? 'hi-IN' : 
-                       language === 'te' ? 'te-IN' :
-                       language === 'ta' ? 'ta-IN' :
-                       language === 'kn' ? 'kn-IN' :
-                       language === 'od' ? 'or-IN' : 'en-US';
-
-      recognition.onstart = () => {
-        console.log('[ChatInterface] Voice recording started');
-        setIsRecording(true);
-      };
-
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        console.log('[ChatInterface] Voice transcript:', transcript);
-        setInputText(transcript);
-        setIsRecording(false);
-      };
-
-      recognition.onerror = (event: any) => {
-        console.error('[ChatInterface] Speech recognition error:', event.error);
-        setIsRecording(false);
-        
-        switch (event.error) {
-          case 'no-speech':
-            alert('No speech detected. Please:\n• Speak clearly into the microphone\n• Check if microphone is muted\n• Try again or type your message');
-            break;
-          case 'not-allowed':
-            alert('Microphone access denied. Please:\n• Click the microphone icon in the address bar\n• Allow microphone access\n• Refresh the page and try again\n\nOr type your message instead.');
-            break;
-          case 'network':
-            alert('Speech recognition service unavailable. This could be due to:\n• Poor internet connection\n• Firewall blocking Google services\n• Regional service restrictions\n• Server temporary issues\n\nPlease type your message instead.');
-            break;
-          case 'aborted':
-            // User cancelled, no need to show error
-            console.log('[ChatInterface] Speech recognition aborted by user');
-            break;
-          case 'audio-capture':
-            alert('Microphone problem detected. Please:\n• Check if microphone is connected\n• Close other apps using microphone\n• Try a different microphone\n\nOr type your message instead.');
-            break;
-          case 'service-not-allowed':
-            alert('Speech recognition service blocked. Please type your message instead.');
-            break;
-          default:
-            alert(`Voice input failed (${event.error}). Please type your message instead.`);
-        }
-      };
-
-      recognition.onend = () => {
-        console.log('[ChatInterface] Voice recording ended');
-        setIsRecording(false);
-        recognitionRef.current = null;
-      };
-
-      recognitionRef.current = recognition;
-      recognition.start();
-      console.log('[ChatInterface] Starting voice recording...');
-    }
+  const toggleRecording = () => {
+    setIsRecording(!isRecording);
+    console.log('[ChatInterface] Toggle recording ->', !isRecording);
+    // Implement speech-to-text functionality here
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -396,9 +242,9 @@ const ChatInterface: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-[95vh] max-w-4xl mx-auto pt-2 pb-6 px-2">
+    <div className="flex flex-col h-screen max-w-4xl mx-auto p-4">
       {/* Chat History Button - Fixed at top */}
-      <div className="flex justify-end mb-2 flex-shrink-0">
+      <div className="flex justify-end mb-4 flex-shrink-0">
         <button
           onClick={() => setShowChatHistory(true)}
           className="flex items-center space-x-2 bg-white/80 backdrop-blur-sm text-gray-700 px-4 py-2 rounded-xl hover:bg-white/90 transition-all duration-200 shadow-lg"
@@ -408,8 +254,8 @@ const ChatInterface: React.FC = () => {
         </button>
       </div>
 
-      {/* Messages Area - Scrollable, limited height */}
-      <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-4 mb-3 overflow-y-auto" style={{height: 'calc(100vh - 280px)'}}>
+      {/* Messages Area - Scrollable, takes remaining space */}
+      <div className="flex-1 bg-white/60 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6 mb-4 overflow-y-auto min-h-0">
         {messages.length === 0 ? (
           <div className="text-center text-gray-500 py-12">
             <MessageCircle className="w-16 h-16 mx-auto mb-4 text-gray-300" />
@@ -445,7 +291,31 @@ const ChatInterface: React.FC = () => {
       </div>
 
       {/* Bottom Fixed Input Area - Always visible */}
-      <div className="flex-shrink-0 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-3">
+      <div className="flex-shrink-0 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-4">
+        {/* Sound Toggle */}
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={() => {
+              console.log('[ChatInterface] Toggle sound ->', !isSoundEnabled);
+              setIsSoundEnabled(!isSoundEnabled);
+            }}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all duration-200 ${
+              isSoundEnabled
+                ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+            }`}
+          >
+            {isSoundEnabled ? (
+              <Volume2 className="w-4 h-4" />
+            ) : (
+              <VolumeX className="w-4 h-4" />
+            )}
+            <span className="text-sm font-medium">
+              {isSoundEnabled ? getTranslation(language, 'soundOn') : getTranslation(language, 'soundOff')}
+            </span>
+          </button>
+        </div>
+
         {/* Input Area */}
         <div className="flex items-center space-x-3">
           <div className="flex-1 relative">
@@ -464,50 +334,20 @@ const ChatInterface: React.FC = () => {
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder={isRecording ? 'Listening... Speak now' : getTranslation(language, 'typeMessage')}
+                placeholder={getTranslation(language, 'typeMessage')}
                 className="flex-1 px-3 py-2 bg-transparent border-none outline-none text-gray-800 placeholder-gray-500"
               />
 
               {/* Microphone Button */}
               <button
                 onClick={toggleRecording}
-                disabled={isTestingConnection}
-                title={
-                  isTestingConnection ? 'Testing connection...' :
-                  isRecording ? 'Click to stop recording' : 
-                  'Click to start voice input (requires internet connection)'
-                }
-                className={`p-2 rounded-lg transition-all duration-200 ${
-                  isTestingConnection
-                    ? 'text-yellow-600 bg-yellow-50 animate-pulse cursor-wait'
-                    : isRecording
-                    ? 'text-red-600 bg-red-50 animate-pulse scale-110'
-                    : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed'
-                }`}
-              >
-                <Mic className={`w-5 h-5 ${isTestingConnection ? 'animate-spin' : ''}`} />
-                {isRecording && (
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></span>
-                )}
-              </button>
-
-              {/* Sound Toggle Button */}
-              <button
-                onClick={() => {
-                  console.log('[ChatInterface] Toggle sound ->', !isSoundEnabled);
-                  setIsSoundEnabled(!isSoundEnabled);
-                }}
                 className={`p-2 rounded-lg transition-colors ${
-                  isSoundEnabled
-                    ? 'text-green-600 bg-green-50 hover:bg-green-100'
-                    : 'text-gray-500 hover:text-gray-600 hover:bg-gray-50'
+                  isRecording
+                    ? 'text-red-600 bg-red-50 animate-pulse'
+                    : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'
                 }`}
               >
-                {isSoundEnabled ? (
-                  <Volume2 className="w-5 h-5" />
-                ) : (
-                  <VolumeX className="w-5 h-5" />
-                )}
+                <Mic className="w-5 h-5" />
               </button>
             </div>
           </div>

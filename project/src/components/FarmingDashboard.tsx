@@ -1,17 +1,22 @@
 import React from 'react';
-import { TrendingUp, Droplets, Gauge, Sprout, Shield, DollarSign } from 'lucide-react';
+import { TrendingUp, Droplets, Gauge, Sprout, Shield } from 'lucide-react';
 import { useAppContext } from '../contexts/AppContext';
 import { getTranslation } from '../utils/translations';
 
 const FarmingDashboard: React.FC = () => {
   const { dashboardData, language } = useAppContext();
 
+  // Check if data has been initialized (non-zero values or custom fertilizer message)
+  const hasUserData = dashboardData.yieldPrediction > 0 || 
+    dashboardData.successRate > 0 || 
+    !dashboardData.fertilizerRecommendation.includes('Chat with AI');
+
   const metrics = [
     {
       key: 'yieldPrediction',
       label: getTranslation(language, 'yieldPrediction'),
-      value: `${dashboardData.yieldPrediction}t`,
-      suffix: getTranslation(language, 'perAcre'),
+      value: hasUserData ? `${dashboardData.yieldPrediction}t` : '--',
+      suffix: hasUserData ? getTranslation(language, 'perAcre') : 'Pending data',
       icon: TrendingUp,
       color: 'from-green-500 to-green-600',
       bg: 'bg-green-50'
@@ -19,8 +24,8 @@ const FarmingDashboard: React.FC = () => {
     {
       key: 'successRate',
       label: getTranslation(language, 'successRate'),
-      value: `${dashboardData.successRate}%`,
-      suffix: '',
+      value: hasUserData ? `${dashboardData.successRate}%` : '--',
+      suffix: hasUserData ? '' : 'Pending data',
       icon: Gauge,
       color: 'from-blue-500 to-blue-600',
       bg: 'bg-blue-50'
@@ -28,8 +33,8 @@ const FarmingDashboard: React.FC = () => {
     {
       key: 'waterRequirement',
       label: getTranslation(language, 'waterRequirement'),
-      value: dashboardData.waterRequirement.toString(),
-      suffix: getTranslation(language, 'litersPerDay'),
+      value: hasUserData ? dashboardData.waterRequirement.toString() : '--',
+      suffix: hasUserData ? getTranslation(language, 'litersPerDay') : 'Pending data',
       icon: Droplets,
       color: 'from-cyan-500 to-cyan-600',
       bg: 'bg-cyan-50'
@@ -37,8 +42,8 @@ const FarmingDashboard: React.FC = () => {
     {
       key: 'irrigationPercentage',
       label: getTranslation(language, 'irrigationPercentage'),
-      value: `${dashboardData.irrigationPercentage}%`,
-      suffix: '',
+      value: hasUserData ? `${dashboardData.irrigationPercentage}%` : '--',
+      suffix: hasUserData ? '' : 'Pending data',
       icon: Droplets,
       color: 'from-teal-500 to-teal-600',
       bg: 'bg-teal-50'
@@ -55,8 +60,8 @@ const FarmingDashboard: React.FC = () => {
     {
       key: 'pestManagementCost',
       label: getTranslation(language, 'pestManagementCost'),
-      value: `${getTranslation(language, 'rupees')}${dashboardData.pestManagementCost}`,
-      suffix: '',
+      value: hasUserData ? `${getTranslation(language, 'rupees')}${dashboardData.pestManagementCost}` : '--',
+      suffix: hasUserData ? '' : 'Pending data',
       icon: Shield,
       color: 'from-purple-500 to-purple-600',
       bg: 'bg-purple-50'
@@ -73,6 +78,17 @@ const FarmingDashboard: React.FC = () => {
           {getTranslation(language, 'dashboard')}
         </h2>
       </div>
+
+      {!hasUserData && (
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            <p className="text-sm text-blue-700 font-medium">
+              Complete the chat conversation to see your personalized farming dashboard
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-4">
         {metrics.map((metric) => {

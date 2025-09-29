@@ -1,0 +1,115 @@
+# Deployment Guide: Vercel + Render
+
+## 🚀 Deploy AI Farming Advisor
+
+### Backend Deployment (Render)
+
+1. **Push to GitHub** (if not already done):
+   ```bash
+   git add .
+   git commit -m "Prepare for deployment"
+   git push origin main
+   ```
+
+2. **Deploy on Render**:
+   - Go to [render.com](https://render.com) and sign up/login
+   - Click "New" → "Web Service"
+   - Connect your GitHub repository: `SIH25044`
+   - Configure:
+     - **Name**: `ai-farming-advisor-backend` (or your choice)
+     - **Root Directory**: `/project` (if repo root is different)
+     - **Environment**: `Python 3`
+     - **Build Command**: `pip install -r requirements.txt`
+     - **Start Command**: `gunicorn --bind 0.0.0.0:$PORT Backend1:app`
+
+3. **Set Environment Variables** on Render:
+   ```
+   GROQ_API_KEY=your_actual_groq_api_key
+   FLASK_DEBUG=False
+   FRONTEND_ORIGINS=https://your-vercel-app.vercel.app
+   ```
+
+4. **Deploy** - Render will automatically build and deploy your backend
+
+### Frontend Deployment (Vercel)
+
+1. **Deploy on Vercel**:
+   - Go to [vercel.com](https://vercel.com) and sign up/login
+   - Click "Add New..." → "Project"
+   - Import your GitHub repository: `SIH25044`
+   - Configure:
+     - **Framework Preset**: Vite
+     - **Root Directory**: `project` (if needed)
+     - **Build Command**: `npm run build` (auto-detected)
+     - **Output Directory**: `dist` (auto-detected)
+
+2. **Set Environment Variables** on Vercel:
+   ```
+   VITE_API_BASE=https://your-render-backend.render.com
+   ```
+   (Replace with your actual Render backend URL)
+
+3. **Deploy** - Vercel will automatically build and deploy your frontend
+
+### Final Configuration
+
+1. **Update Backend CORS** (after getting Vercel URL):
+   - Note your Vercel app URL: `https://your-app-name.vercel.app`
+   - Update Render environment variable:
+     ```
+     FRONTEND_ORIGINS=https://your-app-name.vercel.app
+     ```
+
+2. **Update Frontend API** (after getting Render URL):
+   - Note your Render backend URL: `https://your-backend-name.render.com`
+   - Update Vercel environment variable:
+     ```
+     VITE_API_BASE=https://your-backend-name.render.com
+     ```
+
+3. **Redeploy both services** to apply the changes
+
+## 🔧 Files Created for Deployment
+
+- ✅ `requirements.txt` - Python dependencies for Render
+- ✅ `vercel.json` - Vercel configuration
+- ✅ `.env.example` - Environment variables template
+- ✅ Updated `Backend1.py` - Production-ready Flask app
+- ✅ Updated CORS settings - Allows Vercel domains
+
+## 🌐 Architecture
+
+```
+[Users] → [Vercel Frontend] → [Render Backend] → [Groq AI API]
+         https://*.vercel.app   https://*.render.com
+```
+
+## 💰 Costs
+
+- **Vercel**: Free tier (sufficient for this app)
+- **Render**: Free tier (sufficient for backend, sleeps after 15 min inactivity)
+- **Groq API**: Free tier available
+
+## 📱 Testing
+
+After deployment, test:
+1. Frontend loads on Vercel URL
+2. Language selection works
+3. Chat functionality works
+4. Voice input works (if using HTTPS)
+5. Dashboard updates correctly
+
+## 🔧 Troubleshooting
+
+- **CORS errors**: Check `FRONTEND_ORIGINS` env var on Render
+- **API errors**: Check `VITE_API_BASE` env var on Vercel  
+- **Backend sleeping**: Render free tier sleeps after 15min inactivity
+- **Build failures**: Check logs in Render/Vercel dashboard
+
+## 🚀 Go Live!
+
+Your AI Farming Advisor will be live at:
+- **Frontend**: `https://your-app-name.vercel.app`
+- **Backend**: `https://your-backend-name.render.com`
+
+Farmers worldwide can now access multilingual farming advice! 🌾🤖

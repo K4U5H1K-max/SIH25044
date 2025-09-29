@@ -1036,45 +1036,47 @@ class FarmingAdvisor:
     def _build_analysis_prompt(self) -> str:
         """Build comprehensive analysis prompt"""
         return f"""
-        You are an expert agricultural advisor with deep knowledge of Indian farming conditions.
-        Provide comprehensive, practical farming recommendations based on the following information:
+            You are an expert agricultural advisor with deep knowledge of Indian farming conditions.  
+            Based on the following farmer profile, provide *concise, practical farming recommendations* in *bullet points only*:  
 
-        Farmer Profile:
-        - Crop to plant: {self.farmer_data.get('crop', 'Unknown')}
-        - Soil type: {self.farmer_data.get('soil', 'Unknown')}
-        - Location: {self.farmer_data.get('location', 'Unknown')}
-        - Previous crop history: {self.farmer_data.get('history', 'Unknown')}
+            Farmer Profile:
+            - Crop: {self.farmer_data.get('crop', 'Unknown')}
+            - Soil type: {self.farmer_data.get('soil', 'Unknown')}
+            - Location: {self.farmer_data.get('location', 'Unknown')}
+            - Previous crop history: {self.farmer_data.get('history', 'Unknown')}
 
-        Please provide detailed, actionable recommendations covering:
+            Cover these aspects clearly:
 
-        1. YIELD OPTIMIZATION
-        - Expected yield range and factors affecting it
-        - Best practices to maximize productivity
-        - Timing considerations for optimal harvest
+            1. YIELD OPTIMIZATION
+            - Expected yield range
+            - 2–3 best practices for productivity
+            - Harvest timing tips
 
-        2. IRRIGATION STRATEGY  
-        - Optimal watering schedule and methods
-        - Water conservation techniques
-        - Signs of over/under-watering to watch for
+            2. IRRIGATION STRATEGY
+            - Simple watering schedule & method
+            - 1–2 water conservation tips
+            - Signs of over/under-watering
 
-        3. PEST & DISEASE MANAGEMENT
-        - Common pests and diseases for this crop in this region
-        - Preventive measures and organic solutions
-        - When and how to apply treatments
+            3. PEST & DISEASE MANAGEMENT
+            - Common pests/diseases in this region
+            - Preventive steps
+            - 1–2 treatment suggestions
 
-        4. FERTILIZATION PROGRAM
-        - Soil preparation and nutrient requirements
-        - Organic and chemical fertilizer recommendations
-        - Application timing and quantities
+            4. FERTILIZATION PROGRAM
+            - Soil preparation advice
+            - Fertilizer recommendations (organic/chemical)
+            - When and how much to apply
 
-        5. SEASONAL CONSIDERATIONS
-        - Best planting and harvesting windows
-        - Weather-related precautions
-        - Market timing strategies
+            5. SEASONAL CONSIDERATIONS
+            - Best planting/harvesting window
+            - Weather-related precautions
+            - Basic market timing advice
 
-        Make your response practical, specific to Indian conditions, and suitable for 
-        farmers with varying experience levels. Keep language simple and actionable.
-        """
+            Output Rules:
+            - Use only bullet points (no paragraphs)
+            - Keep each point short and actionable
+            - Make it farmer-friendly and specific to Indian conditions
+            """
 
     def _query_groq_for_analysis(self, prompt: str) -> str:
         """Query Groq API for detailed crop analysis"""
@@ -1348,10 +1350,11 @@ app = Flask(__name__)
 frontend_origins_env = os.getenv('FRONTEND_ORIGINS') or os.getenv('FRONTEND_ORIGIN')
 env_origins = [o.strip() for o in frontend_origins_env.split(',')] if frontend_origins_env else []
 
-# Allow any localhost/127.0.0.1 port during dev (use compiled regex)
+# Allow localhost during dev and production domains
 allowed_origins = [
     re.compile(r"http://localhost:\d+$"),
     re.compile(r"http://127\.0\.0\.1:\d+$"),
+    re.compile(r"https://.*\.vercel\.app$"),  # Allow all Vercel domains
     *[o for o in env_origins if o],
 ]
 
@@ -1526,7 +1529,12 @@ def followup():
             return self._get_fallback_analysis()
 
 if __name__ == "__main__":
+    # For production (Render), use the PORT environment variable
+    port = int(os.getenv('PORT', os.getenv('BACKEND_PORT', '5000')))
     host = os.getenv('BACKEND_HOST', '0.0.0.0')
-    port = int(os.getenv('BACKEND_PORT', '5000'))
+    
     print(f"Starting backend on {host}:{port}; allowed CORS origins: {_origins_to_str(allowed_origins)}")
-    app.run(host=host, port=port)
+    
+    # Use debug=False for production
+    debug_mode = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
+    app.run(host=host, port=port, debug=debug_mode)

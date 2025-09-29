@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { Language, User, ChatMessage, DashboardData, ChatHistory } from '../types';
+import { getTranslation } from '../utils/translations';
 
 interface AppContextType {
   // Auth
@@ -48,17 +49,28 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [language, setLanguage] = useState<Language>('en');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+
+  // Initialize welcome message based on language
+  useEffect(() => {
+    const welcomeMessage: ChatMessage = {
+      id: 'welcome-1',
+      type: 'ai',
+      content: getTranslation(language, 'botWelcome'),
+      timestamp: new Date()
+    };
+    setMessages([welcomeMessage]);
+  }, [language]);
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [chatHistories, setChatHistories] = useState<ChatHistory[]>([]);
   
   const [dashboardData, setDashboardData] = useState<DashboardData>({
-    yieldPrediction: 2.5,
-    successRate: 87,
-    waterRequirement: 450,
-    irrigationPercentage: 78,
-    fertilizerRecommendation: 'NPK 10-26-26',
-    pestManagementCost: 1200
+    yieldPrediction: 0,
+    successRate: 0,
+    waterRequirement: 0,
+    irrigationPercentage: 0,
+    fertilizerRecommendation: 'Chat with AI to get recommendations',
+    pestManagementCost: 0
   });
 
   const addMessage = (message: ChatMessage) => {
