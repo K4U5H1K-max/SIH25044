@@ -2,8 +2,9 @@
 # This file configures the frontend deployment on Render
 
 # Build settings
-buildCommand: npm run build
+buildCommand: npm ci && npx vite build
 publishDir: dist
+nodeVersion: 18
 
 # Headers for SPA routing
 headers:
