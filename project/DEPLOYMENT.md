@@ -71,10 +71,17 @@
      - **Output Directory**: `dist` (auto-detected)
 
 2. **Set Environment Variables** on Vercel:
-   ```
-   VITE_API_BASE=https://your-render-backend.render.com
-   ```
-   (Replace with your actual Render backend URL)
+   - Go to your Vercel project dashboard
+   - Click "Settings" → "Environment Variables"
+   - Add a new environment variable:
+     - **Key**: `VITE_API_BASE`
+     - **Value**: `https://sih25044.onrender.com`
+     - **Environment**: Select "Production", "Preview", and "Development"
+   - Click "Save"
+
+3. **Test your backend** (should return JSON, not 404):
+   - Visit: `https://sih25044.onrender.com/health` (if available)
+   - Or test the chat endpoint: `https://sih25044.onrender.com/chat`
 
 3. **Deploy** - Vercel will automatically build and deploy your frontend
 
